@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApexPlanet - Cohort Analysis & Customer Segmentation Dashboard</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #080b11;
+            --card-bg: rgba(17, 24, 39, 0.65);
+            --card-border: rgba(255, 255, 255, 0.07);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #f59e0b;
+            --font-family: 'Outfit', sans-serif;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.07) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            padding-bottom: 3rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+            font-size: 1.1rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #ffffff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-title p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            padding: 5px 14px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        /* KPI grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-blue);
+        }
+
+        .kpi-card.sales::before { background: var(--accent-blue); }
+        .kpi-card.customers::before { background: var(--accent-green); }
+        .kpi-card.retention::before { background: var(--accent-purple); }
+        .kpi-card.aov::before { background: var(--accent-orange); }
+
+        .kpi-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #e5e7eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .kpi-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            display: block;
+        }
+
+        /* Tab Layout */
+        .tab-section {
+            margin-bottom: 2rem;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1px;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: var(--font-family);
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--accent-purple);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent-purple);
+            border-radius: 3px 3px 0 0;
+            box-shadow: 0 -2px 10px rgba(139, 92, 246, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Section Layouts */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-2col {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-box {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .chart-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-title span {
+            font-size: 0.8rem;
+            color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.1);
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 340px;
+            width: 100%;
+        }
+
+        /* Heatmap CSS Grid Table */
+        .heatmap-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+        }
+
+        .heatmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .heatmap-table th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 10px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .heatmap-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            color: white;
+            font-weight: 600;
+        }
+
+        .heatmap-table td.cohort-header {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-align: left;
+            padding-left: 15px;
+            width: 120px;
+        }
+
+        /* RFM Explorer Styling */
+        .rfm-explorer {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .rfm-explorer {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .segment-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .segment-option {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 14px 16px;
+            text-align: left;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: var(--font-family);
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .segment-option:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        .segment-option.active {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.3);
+            color: var(--text-primary);
+        }
+
+        .segment-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+        }
+
+        .segment-option.active .segment-badge {
+            background: var(--accent-purple);
+            color: white;
+        }
+
+        .explorer-details {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .segment-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .seg-metric {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .seg-metric-lbl {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .seg-metric-val {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .strategy-banner {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.08));
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .strategy-banner h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .strategy-banner p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* Top Customers Table */
+        .customers-table-container {
+            margin-top: 1rem;
+        }
+
+        .customers-table-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .customers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        .customers-table th {
+            padding: 10px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--card-border);
+            font-weight: 500;
+        }
+
+        .customers-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-logo">
+                <div class="logo-icon">DD</div>
+                <div class="header-title">
+                    <h1>Customer Deep-Dive & Segmentation Dashboard</h1>
+                    <p>Automated Cohort Retention Matrix and RFM Segmentation Model (Week 3 Internship Task)</p>
+                </div>
+            </div>
+            <div class="meta-info">
+                <span class="badge">ApexPlanet Software Pvt. Ltd.</span>
+            </div>
+        </header>
+
+        <!-- KPIs -->
+        <section class="kpi-grid">
+            <div class="kpi-card sales">
+                <div class="kpi-title">Total Revenue</div>
+                <div class="kpi-value" id="kpi-sales">$0.00</div>
+                <span class="kpi-desc">Global Sales Revenue</span>
+            </div>
+            <div class="kpi-card customers">
+                <div class="kpi-title">Total Customers</div>
+                <div class="kpi-value" id="kpi-customers">0</div>
+                <span class="kpi-desc">Unique Buyers Profiled</span>
+            </div>
+            <div class="kpi-card retention">
+                <div class="kpi-title">Returning Customer Rate</div>
+                <div class="kpi-value" id="kpi-retention">0.0%</div>
+                <span class="kpi-desc">Customers with 2+ Orders</span>
+            </div>
+            <div class="kpi-card aov">
+                <div class="kpi-title">Average Order Value (AOV)</div>
+                <div class="kpi-value" id="kpi-aov">$0.00</div>
+                <span class="kpi-desc">Average Spend per Purchase</span>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <section class="tab-section">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('tab-cohorts')">Cohort Retention & LTV</button>
+                <button class="tab-btn" onclick="switchTab('tab-rfm')">RFM Customer Segmentation</button>
+            </div>
+
+            <!-- Tab 1: Cohort Analysis -->
+            <div class="tab-content active" id="tab-cohorts">
+                <div class="grid-2col">
+                    <div class="chart-box" style="grid-column: span 2;">
+                        <div class="chart-title">
+                            Dynamic Cohort Retention Matrix Heatmap
+                            <span>Cohort Retention %</span>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.4;">
+                            The table below shows quarterly customer retention cohorts. Customers are grouped by their first purchase quarter (row header). 
+                            Subsequent quarters (columns) show the percentage of those same customers who returned to make additional purchases. 
+                            Darker blue indicates higher retention rates.
+                        </p>
+                        <div class="heatmap-container">
+                            <table class="heatmap-table" id="cohort-heatmap-table">
+                                <thead>
+                                    <!-- Dynamic header -->
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2col">
+                    <div class="chart-box" style="grid-column: span 2;">
+                        <div class="chart-title">
+                            Cohort Customer Lifetime Value (LTV) Growth Curves
+                            <span>Cumulative Sales ($)</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="ltvChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: RFM Customer Segmentation -->
+            <div class="tab-content" id="tab-rfm">
+                <div class="grid-2col">
+                    <div class="chart-box">
+                        <div class="chart-title">
+                            Customer RFM Segment Sizes
+                            <span>Distribution Count</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="rfmDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title">
+                            RFM Segment Monetary Revenue Contribution
+                            <span>Value Breakdown</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="rfmMonetaryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Explorer -->
+                <div class="chart-box" style="margin-bottom: 1.5rem;">
+                    <div class="chart-title" style="margin-bottom: 0.5rem;">
+                        Interactive RFM Segment Details Explorer
+                        <span>Segment Deep-Dive</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Select an RFM customer segment on the left to see its descriptive metrics, recommended marketing strategy, and top high-value customers.
+                    </p>
+
+                    <div class="rfm-explorer">
+                        <div class="segment-selector" id="rfm-selectors">
+                            <!-- Dynamic selector buttons -->
+                        </div>
+                        <div class="explorer-details">
+                            <h3 style="font-size: 1.3rem; margin-bottom: 1rem;" id="exp-segment-title">Segment Name</h3>
+                            
+                            <div class="segment-metrics-grid">
+                                <div class="seg-metric">
+                                    <div class="seg-metric-lbl">Customer Count</div>
+                                    <div class="seg-metric-val" id="exp-count">0</div>
+                                </div>
+                                <div class="seg-metric">
+                                    <div class="seg-metric-lbl">Avg. Recency</div>
+                                    <div class="seg-metric-val" id="exp-recency">0 Days</div>
+                                </div>
+                                <div class="seg-metric">
+                                    <div class="seg-metric-lbl">Avg. Orders</div>
+                                    <div class="seg-metric-val" id="exp-frequency">0.0 Orders</div>
+                                </div>
+                                <div class="seg-metric">
+                                    <div class="seg-metric-lbl">Total Spend</div>
+                                    <div class="seg-metric-val" id="exp-monetary">$0.00</div>
+                                </div>
+                            </div>
+
+                            <div class="strategy-banner">
+                                <h4 id="exp-strat-title">💡 Marketing Action & Strategy Recommendation</h4>
+                                <p id="exp-strat-desc">Strategy detail description goes here.</p>
+                            </div>
+
+                            <div class="customers-table-container">
+                                <div class="customers-table-title">Top 5 Highest Spenders in this Segment</div>
+                                <table class="customers-table" id="exp-customers-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Customer ID</th>
+                                            <th>Customer Name</th>
+                                            <th>Recency (Days)</th>
+                                            <th>Total Orders</th>
+                                            <th>Total Revenue ($)</th>
+                                            <th>Sub-Segment</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dynamic customer list -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Load pre-calculated JSON data -->
+    <script src="data.js"></script>
+    <script>
+        // Global variables for charts
+        let ltvChartObj = null;
+        let rfmDistChartObj = null;
+        let rfmMonChartObj = null;
+        let activeSegment = "Champions";
+
+        // Tab switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+
+            // Redraw charts/tables as they need canvas width triggers
+            if (tabId === 'tab-cohorts') {
+                renderCohortVisuals();
+            } else if (tabId === 'tab-rfm') {
+                renderRfmVisuals();
+            }
+        }
+
+        // Color cell helper for cohort heatmap (Yellow to Blue gradient)
+        function getCellColor(val) {
+            if (val === null || val === undefined) return "transparent";
+            // Map 0-100% to alpha values. 
+            // Normalize for visual contrast: standard Superstore retention ranges 10% to 50%
+            let alpha = Math.min(Math.max((val - 5) / 45, 0.05), 0.95);
+            return `rgba(59, 130, 246, ${alpha})`;
+        }
+
+        function getTextColor(val) {
+            if (val === null || val === undefined) return "transparent";
+            // For dark backgrounds (high retention alpha), text should be white, otherwise light grey
+            let alpha = Math.min(Math.max((val - 5) / 45, 0.05), 0.95);
+            return alpha > 0.6 ? "#ffffff" : "#d1d5db";
+        }
+
+        // Format Currency
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 0
+            }).format(val);
+        }
+
+        // Initialize dashboard KPIs
+        function initKpis() {
+            document.getElementById("kpi-sales").innerText = formatCurrency(week3Data.kpis.sales);
+            document.getElementById("kpi-customers").innerText = week3Data.kpis.total_customers.toLocaleString();
+            document.getElementById("kpi-retention").innerText = `${week3Data.kpis.overall_retention}%`;
+            document.getElementById("kpi-aov").innerText = formatCurrency(week3Data.kpis.aov);
+        }
+
+        // RENDER COHORT STUFF
+        function renderCohortVisuals() {
+            // Render Heatmap Table
+            const headerRow = document.getElementById("cohort-heatmap-table").querySelector("thead");
+            const tbody = document.getElementById("cohort-heatmap-table").querySelector("tbody");
+            
+            headerRow.innerHTML = "";
+            tbody.innerHTML = "";
+
+            // Create Header
+            let hr = document.createElement("tr");
+            let th = document.createElement("th");
+            th.innerText = "Cohort Start";
+            hr.appendChild(th);
+            
+            // Assume 12 index columns
+            for (let i = 0; i <= 12; i++) {
+                let th_idx = document.createElement("th");
+                th_idx.innerText = `Q${i}`;
+                hr.appendChild(th_idx);
+            }
+            headerRow.appendChild(hr);
+
+            // Populate Cohorts
+            week3Data.cohorts.retention.forEach(row => {
+                let tr = document.createElement("tr");
+                let tdCohort = document.createElement("td");
+                tdCohort.className = "cohort-header";
+                tdCohort.innerText = row.cohort;
+                tr.appendChild(tdCohort);
+
+                row.values.forEach(val => {
+                    let tdVal = document.createElement("td");
+                    if (val === null) {
+                        tdVal.innerText = "-";
+                        tdVal.style.color = "rgba(255,255,255,0.15)";
+                    } else {
+                        tdVal.innerText = `${val}%`;
+                        tdVal.style.backgroundColor = getCellColor(val);
+                        tdVal.style.color = getTextColor(val);
+                    }
+                    tr.appendChild(tdVal);
+                });
+                tbody.appendChild(tr);
+            });
+
+            // Render LTV Curves
+            const ctxLtv = document.getElementById("ltvChart").getContext("2d");
+            if (ltvChartObj) ltvChartObj.destroy();
+
+            // We only plot 2014 cohorts to keep line chart clean
+            const plotCohorts = week3Data.cohorts.ltv.filter(row => row.cohort.startsWith("2014"));
+            const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+
+            const datasets = plotCohorts.map((row, index) => {
+                // Filter trailing nulls
+                const validVals = row.values.filter(v => v !== null);
+                const labels = validVals.map((_, i) => `Q${i}`);
+                
+                return {
+                    label: `Cohort ${row.cohort}`,
+                    data: validVals,
+                    borderColor: colors[index % colors.length],
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.15,
+                    pointRadius: 4,
+                    pointBackgroundColor: colors[index % colors.length]
+                };
+            });
+
+            ltvChartObj = new Chart(ctxLtv, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 13}, (_, i) => `Q${i}`),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f3f4f6', font: { family: 'Outfit', size: 12 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // RENDER RFM STUFF
+        function renderRfmVisuals() {
+            // Render selector options on the left
+            const rfmSelectors = document.getElementById("rfm-selectors");
+            rfmSelectors.innerHTML = "";
+
+            const segmentList = ["Champions", "Loyalists", "Potential Loyalists", "At Risk", "Hibernating"];
+            segmentList.forEach(seg => {
+                const count = week3Data.rfm.summary[seg] ? week3Data.rfm.summary[seg].count : 0;
+                
+                const btn = document.createElement("button");
+                btn.className = `segment-option ${seg === activeSegment ? 'active' : ''}`;
+                btn.onclick = () => selectRfmSegment(seg);
+                btn.innerHTML = `${seg} <span class="segment-badge">${count}</span>`;
+                rfmSelectors.appendChild(btn);
+            });
+
+            // Update details pane
+            updateExplorerDetails();
+
+            // Render Segment Distribution (Bar Chart)
+            const ctxDist = document.getElementById("rfmDistributionChart").getContext("2d");
+            if (rfmDistChartObj) rfmDistChartObj.destroy();
+
+            const distData = segmentList.map(s => week3Data.rfm.summary[s] ? week3Data.rfm.summary[s].count : 0);
+            
+            rfmDistChartObj = new Chart(ctxDist, {
+                type: 'bar',
+                data: {
+                    labels: segmentList,
+                    datasets: [{
+                        data: distData,
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',  // Champions - Emerald
+                            'rgba(59, 130, 246, 0.7)',  // Loyalists - Blue
+                            'rgba(139, 92, 246, 0.7)', // Potential - Purple
+                            'rgba(245, 158, 11, 0.7)',  // At Risk - Orange
+                            'rgba(239, 68, 68, 0.7)'    // Hibernating - Red
+                        ],
+                        borderColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af', font: { family: 'Outfit' } }
+                        }
+                    }
+                }
+            });
+
+            // Render Segment Revenue Breakdown (Doughnut Chart)
+            const ctxMon = document.getElementById("rfmMonetaryChart").getContext("2d");
+            if (rfmMonChartObj) rfmMonChartObj.destroy();
+
+            const monData = segmentList.map(s => week3Data.rfm.summary[s] ? week3Data.rfm.summary[s].monetary : 0);
+
+            rfmMonChartObj = new Chart(ctxMon, {
+                type: 'doughnut',
+                data: {
+                    labels: segmentList,
+                    datasets: [{
+                        data: monData,
+                        backgroundColor: [
+                            '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#f3f4f6', font: { family: 'Outfit', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // RFM Segment selector action
+        function selectRfmSegment(segmentName) {
+            activeSegment = segmentName;
+            document.querySelectorAll('#rfm-selectors .segment-option').forEach(btn => {
+                if (btn.innerText.includes(segmentName)) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            updateExplorerDetails();
+        }
+
+        // Update details pane dynamically
+        function updateExplorerDetails() {
+            const data = week3Data.rfm.summary[activeSegment];
+            const topCust = week3Data.rfm.top_customers[activeSegment] || [];
+
+            document.getElementById("exp-segment-title").innerText = `${activeSegment} Segment Deep-Dive`;
+            document.getElementById("exp-count").innerText = data.count.toLocaleString();
+            document.getElementById("exp-recency").innerText = `${data.recency} Days`;
+            document.getElementById("exp-frequency").innerText = `${data.frequency} Orders`;
+            document.getElementById("exp-monetary").innerText = formatCurrency(data.monetary);
+
+            // Recommendations
+            const stratTitle = document.getElementById("exp-strat-title");
+            const stratDesc = document.getElementById("exp-strat-desc");
+
+            if (activeSegment === "Champions") {
+                stratTitle.innerText = "💡 VIP Incentives & Brand Ambassadors";
+                stratDesc.innerText = "These are your most active and highest-spending customers. Offer them exclusive early-access perks, product preview beta clubs, and high-tier loyalty status. Avoid heavy standard discounts to protect high margins.";
+            } else if (activeSegment === "Loyalists") {
+                stratTitle.innerText = "💡 Value Retention & Loyalty Programs";
+                stratDesc.innerText = "Highly active customer base. Drive customer advocacy and upsell high-margin accessories or category add-ons. Personalize product recommendations based on their historical category preferences.";
+            } else if (activeSegment === "Potential Loyalists") {
+                stratTitle.innerText = "💡 Engagement & First-Order Nurturing";
+                stratDesc.innerText = "Recent buyers with low purchase frequency. Trigger onboarding welcome series, cross-sell popular sub-categories, and provide moderate discounts on their next 2 orders to build a purchasing habit.";
+            } else if (activeSegment === "At Risk") {
+                stratTitle.innerText = "⚠️ High-Value Win-back Campaign Required";
+                stratDesc.innerText = "Historically frequent and valuable customers who have not made a purchase in over 6-12 months. Send personalized 'We Miss You' emails containing highly attractive, time-limited 15-20% discounts to re-activate their interest.";
+            } else {
+                stratTitle.innerText = "💤 Low-Cost Retargeting / Inactive Account Cleaning";
+                stratDesc.innerText = "Inactive buyers with low frequency. Re-engage only using low-cost automated channel emails containing stock clearing discounts. Do not waste significant marketing budget on manual outbound campaigns.";
+            }
+
+            // Populate Top Customers Table
+            const tbody = document.getElementById("exp-customers-table").querySelector("tbody");
+            tbody.innerHTML = "";
+
+            topCust.forEach(c => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${c.id}</td>
+                    <td>${c.name}</td>
+                    <td>${c.recency}</td>
+                    <td>${c.frequency}</td>
+                    <td>${formatCurrency(c.monetary)}</td>
+                    <td><span class="badge" style="background: rgba(255,255,255,0.05); color: #d1d5db; border: none; padding: 2px 8px;">${c.segment}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Initialize dashboard on load
+        window.addEventListener('DOMContentLoaded', () => {
+            initKpis();
+            renderCohortVisuals();
+        });
+    </script>
+</body>
+</html>
